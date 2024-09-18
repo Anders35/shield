@@ -316,16 +316,16 @@ Fungsi dari `is_valid()` saat membuat form di Django adalah untuk memvalidasi da
 
 #### XML
 
-<img width="auto" height="600" src="assets/xml.png">
+<img width="auto" height="550" src="assets/xml.png">
 
 #### JSON
 
-<img width="auto" height="600" src="assets/json.png">
+<img width="auto" height="550" src="assets/json.png">
 
 #### XML by ID
 
-<img width="auto" height="600" src="assets/xml_by_id.png">
+<img width="auto" height="550" src="assets/xml_by_id.png">
 
 #### JSON by ID
 
-<img width="auto" height="600" src="assets/json_by_id.png">
+<img width="auto" height="550" src="assets/json_by_id.png">
