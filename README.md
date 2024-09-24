@@ -329,3 +329,240 @@ Fungsi dari `is_valid()` saat membuat form di Django adalah untuk memvalidasi da
 #### JSON by ID
 
 <img width="auto" height="550" src="assets/json_by_id.png">
+
+## Tugas 4
+
+### Apa perbedaan antara `HttpResponseRedirect()` dan `redirect()`
+
+
+
+### Jelaskan cara kerja penghubungan model `Product` dengan `User`!
+
+
+
+### Apa perbedaan antara _authentication_ dan _authorization_, apakah yang dilakukan saat pengguna login? Jelaskan bagaimana Django mengimplementasikan kedua konsep tersebut.
+
+
+
+### Bagaimana Django mengingat pengguna yang telah login? Jelaskan kegunaan lain dari cookies dan apakah semua cookies aman digunakan?
+
+
+
+### Implementasi Checklist
+
+1. Mengimpor `User` dan menambahkan field `user` pada model `Product` dengan kode berikut.
+    ```py
+    ...
+    from django.contrib.auth.models import User
+    ...
+    class MoodEntry(models.Model):
+        user = models.ForeignKey(User, on_delete=models.CASCADE)
+    ...
+    ```
+
+2. Menambahkan _import_ `UserCreationForm` dan `messages` pada `views.py` pada direktori `main`.
+    ```py
+    import datetime
+    from django.urls import reverse
+    from django.contrib.auth.decorators import login_required
+    from django.contrib.auth.forms import UserCreationForm, AuthenticationForm
+    from django.contrib.auth import authenticate, login, logout
+    from django.contrib import messages
+    from django.http import HttpResponse, HttpResponseRedirect
+    ```
+
+3. Menambahkan fungsi `register` pada `views.py` pada direktori `main`.
+    ```py
+    def register(request):
+        form = UserCreationForm()
+
+        if request.method == "POST":
+            form = UserCreationForm(request.POST)
+            if form.is_valid():
+                form.save()
+                messages.success(request, 'Your account has been successfully created!')
+                return redirect('main:login')
+        context = {'form':form}
+        return render(request, 'register.html', context)
+    ```
+
+4. Menambahkan fungsi `login_user` pada `views.py` pada direktori `main`.
+    ```py
+    def login_user(request):
+        if request.method == 'POST':
+            form = AuthenticationForm(data=request.POST)
+
+            if form.is_valid():
+                user = form.get_user()
+                login(request, user)
+                response = HttpResponseRedirect(reverse("main:show_main"))
+                response.set_cookie('last_login', str(datetime.datetime.now()))
+                return response
+
+        else:
+            form = AuthenticationForm(request)
+        context = {'form': form}
+        return render(request, 'login.html', context)
+    ```
+
+5. Menambahkan fungsi `logout_user` pada `views.py` pada direktori `main`.
+    ```py
+    def logout_user(request):
+        logout(request)
+        response = HttpResponseRedirect(reverse('main:login'))
+        response.delete_cookie('last_login')
+        return response
+    ```
+
+6. Mengubah fungsi `show_main` pada `views.py` pada direktori `main`.
+    ```py
+    @login_required(login_url='/login')
+    def show_main(request):
+        products = Product.objects.filter(user=request.user)
+        
+        context = {
+            'app_name': 'Shield',
+            'name': request.user.username,
+            'class': 'PBP E',
+            'products': products,
+            'last_login': request.COOKIES['last_login'],
+        }
+
+        return render(request, "main.html", context)
+    ```
+
+7. Mengubah fungsi `create_product` pada `views.py` pada direktori `main`.
+    ```py
+    def create_product(request):
+        form = ProductForm(request.POST or None)
+
+        if form.is_valid() and request.method == "POST":
+            product = form.save(commit=False)
+            product.user = request.user
+            product.save()
+            return redirect('main:show_main')
+
+        context = {'form': form}
+        return render(request, "create_product.html", context)
+    ```
+
+8. Mengimpor fungsi-fungsi yang sudah dibuat dan menambahkan _path_ URL ke dalam `urlpatterns` untuk mengakses fungsi-fungsi tersebut.
+    ```py
+    from django.urls import path
+    from main.views import show_main, create_product, show_xml, show_json, show_xml_by_id, show_json_by_id, register, login_user, logout_user
+
+    app_name = 'main'
+
+    urlpatterns = [
+        path('', show_main, name='show_main'),
+        path('create-product', create_product, name='create_product'),
+        path('xml/', show_xml, name='show_xml'),
+        path('json/', show_json, name='show_json'),
+        path('xml/<str:id>/', show_xml_by_id, name='show_xml_by_id'),
+        path('json/<str:id>/', show_json_by_id, name='show_json_by_id'),
+        path('register/', register, name='register'),
+        path('login/', login_user, name='login'),
+        path('logout/', logout_user, name='logout'),
+    ]
+    ```
+
+9. Membuat berkas HTML baru bernama `register.html` pada direktori `main/templates` dengan kode berikut.
+    ```html
+    {% extends 'base.html' %}
+
+    {% block meta %}
+    <title>Register</title>
+    {% endblock meta %}
+
+    {% block content %}
+
+    <div class="login">
+    <h1>Register</h1>
+
+    <form method="POST">
+        {% csrf_token %}
+        <table>
+        {{ form.as_table }}
+        <tr>
+            <td></td>
+            <td><input type="submit" name="submit" value="Daftar" /></td>
+        </tr>
+        </table>
+    </form>
+
+    {% if messages %}
+    <ul>
+        {% for message in messages %}
+        <li>{{ message }}</li>
+        {% endfor %}
+    </ul>
+    {% endif %}
+    </div>
+
+    {% endblock content %}
+    ```
+
+10. Membuat berkas HTML baru bernama `login.html` pada direktori `main/templates` dengan kode berikut.
+    ```html
+    {% extends 'base.html' %}
+
+    {% block meta %}
+    <title>Login</title>
+    {% endblock meta %}
+
+    {% block content %}
+    <div class="login">
+    <h1>Login</h1>
+
+    <form method="POST" action="">
+        {% csrf_token %}
+        <table>
+        {{ form.as_table }}
+        <tr>
+            <td></td>
+            <td><input class="btn login_btn" type="submit" value="Login" /></td>
+        </tr>
+        </table>
+    </form>
+
+    {% if messages %}
+    <ul>
+        {% for message in messages %}
+        <li>{{ message }}</li>
+        {% endfor %}
+    </ul>
+    {% endif %} Don't have an account yet?
+    <a href="{% url 'main:register' %}">Register Now</a>
+    </div>
+
+    {% endblock content %}
+    ```
+
+11. Menambahkan tombol _logout_ dan tampilan _last login_ pada berkas `main.html` pada direktori `main/templates` dengan kode berikut.
+    ```html
+    ...
+    <a href="{% url 'main:logout' %}">
+        <button>Logout</button>
+    </a>
+
+    <h5>Sesi terakhir login: {{ last_login }}</h5>
+    ...
+    ```
+
+12. Menyimpan semua perubahan dan melakukan migrasi model dengan perintah berikut.
+    ```bash
+    python manage.py makemigrations
+    python manage.py migrate
+    ```
+
+13. Menambahkan impor baru dan mengganti variabel `DEBUG` pada berkas `settings.py` pada direktori `shield`.
+    ```py
+    ...
+    import os
+    ...
+    PRODUCTION = os.getenv("PRODUCTION", False)
+    DEBUG = not PRODUCTION
+    ...
+    ```
+
+14. Melakukan `add`-`commit`-`push` ke GitHub.
