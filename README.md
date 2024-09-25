@@ -334,19 +334,19 @@ Fungsi dari `is_valid()` saat membuat form di Django adalah untuk memvalidasi da
 
 ### Apa perbedaan antara `HttpResponseRedirect()` dan `redirect()`
 
-
+`HttpResponseRedirect()` dan `redirect()` pada dasarnya melakukan hal yang sama yaitu mengarahkan pengguna ke URL lain. `HttpResponseRedirect()` adalah kelas yang mengembalikan objek respons HTTP dan hanya menerima satu argumen berupa URL, sedangkan `redirect()` adalah fungsi shortcut dari Django yang mengembalikan `HttpResponseRedirect()`. `redirect()` juga dapat menerima berbagai jenis argumen berupa `model`, `view`, atau URL sehingga lebih fleksibel dari `HttpResponseRedirect()`.
 
 ### Jelaskan cara kerja penghubungan model `Product` dengan `User`!
 
-
+Cara menghubungkan model `Product` dengan `User` adalah dengan menambahkan ForeignKey ke model `Product` yang mengacu pada `User`. Dengan begitu, setiap `Product` akan terhubung langsung ke satu `User`.
 
 ### Apa perbedaan antara _authentication_ dan _authorization_, apakah yang dilakukan saat pengguna login? Jelaskan bagaimana Django mengimplementasikan kedua konsep tersebut.
 
-
+_Authentication_ adalah proses memverifikasi identitas pengguna saat pengguna login, sedangkan _authorization_ adalah proses memberi akses pengguna setelah mereka terautentikasi dan menentukan apa yang dapat dilakukan pengguna dalam sistem. Saat pengguna login, kredensial yang pengguna berikan akan diverifikasi oleh sistem terlebih dahulu. Setelah pengguna terverifikasi, sistem akan menentukan apa yang dapat dilakukan pengguna dan memberi akses tersebut ke pengguna. Django menyediakan sistem autentikasi bawaan yang mencakup model `User`, _form login_, dan _backend_ autentikasi. Saat pengguna login, Django memverifikasi kredensial dan membuat sesi untuk pengguna. Selain itu, Django menggunakan sistem _permissions_ yang dapat diatur pada level model atau objek dimana kita dapat menentukan izin khusus dan memeriksa izin ini dalam `view` atau `template`.
 
 ### Bagaimana Django mengingat pengguna yang telah login? Jelaskan kegunaan lain dari cookies dan apakah semua cookies aman digunakan?
 
-
+Django menggunakan _session_ untuk mengingat pengguna yang telah login. Saat pengguna login, Django menyimpan informasi _session_ di _server_ dan mengirimkan _session cookie_ ke _browser_ pengguna. _Cookie_ ini berisi ID sesi yang digunakan untuk mengidentifikasi _session_ pengguna pada permintaan berikutnya. Kegunaan lain dari _cookies_ adalah menyimpan preferensi pengguna dan melacak perilaku pengguna untuk analitik. Tidak semua _cookies_ aman digunakan karena _cookies_ dapat menjadi risiko keamanan jika menyimpan informasi sensitif tanpa enkripsi dan digunakan untuk melacak pengguna tanpa izin.
 
 ### Implementasi Checklist
 
