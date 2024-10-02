@@ -566,3 +566,189 @@ Django menggunakan _session_ untuk mengingat pengguna yang telah login. Saat pen
     ```
 
 14. Melakukan `add`-`commit`-`push` ke GitHub.
+
+## Tugas 5
+
+### Jika terdapat beberapa CSS selector untuk suatu elemen HTML, jelaskan urutan prioritas pengambilan CSS selector tersebut!
+
+Urutan prioritas pengambilan CSS selector dimulai dari prioritas tertinggi adalah:
+1. Inline styles
+2. ID selectors
+3. Classes selector
+4. Element selectors 
+
+### Mengapa responsive design menjadi konsep yang penting dalam pengembangan aplikasi web? Berikan contoh aplikasi yang sudah dan belum menerapkan responsive design!
+ 
+Responsive design adalah konsep dalam pengembangan aplikasi web yang memastikan tampilan dan fungsionalitas aplikasi tetap optimal di berbagai perangkat dan ukuran layar yang berbeda-beda. Contoh aplikasi yang sudah menerapkan responsive design adalah _Twitter_, sedangkan aplikasi yang belum menerapkannya adalah _craigslist_.
+
+### Jelaskan perbedaan antara margin, border, dan padding, serta cara untuk mengimplementasikan ketiga hal tersebut!
+
+Margin adalah ruang di luar border elemen dan digunakan untuk memberikan jarak antara elemen dengan elemen lainnya. Border adalah garis yang mengelilingi elemen. Padding adalah ruang di dalam border elemen, antara border dan konten dan digunakan untuk memberikan ruang di sekitar konten elemen.
+
+Implementasi:
+- margin: 10px;
+- border: 1px solid black;
+- padding: 10px;
+
+### Jelaskan konsep flex box dan grid layout beserta kegunaannya!
+
+_flex box_ digunakan untuk mengatur tata letak elemen dalam satu baris atau kolom. _flex box_ memudahkan pengaturan posisi elemen-elemen dalam suatu container. _Grid layout_ digunakan untuk mengatur tata letak elemen dalam kedua baris dan kolom bukan salah satunya saja. _Grid layout_ memungkinkan pembuatan layout yang lebih kompleks dengan kontrol yang lebih baik atas posisi elemen. Kedua fitur ini sangat berguna untuk membuat layout menjadi lebih responsif dan fleksibel.
+
+### Implementasi Checklist
+
+1. Menambahkan fungsi `edit_product` dan `delete_product` pada `views.py` pada direktori `main` dengan kode berikut.
+    ```py
+    from django.shortcuts import .., reverse
+    from django.http import .., HttpResponseRedirect    
+    ...
+    def edit_product(request, id):
+    product = Product.objects.get(pk = id)
+
+    form = ProductForm(request.POST or None, instance=product)
+
+    if form.is_valid() and request.method == "POST":
+        form.save()
+        return HttpResponseRedirect(reverse('main:show_main'))
+
+    context = {'form': form}
+    return render(request, "edit_product.html", context)
+
+    def delete_product(request, id):
+        product = Product.objects.get(pk = id)
+        product.delete()
+        return HttpResponseRedirect(reverse('main:show_main'))
+    ```
+
+2. Menambahkan _path_ URL ke dalam `urlpatterns` pada `urls.py` pada direktori `main`.
+    ```py
+    from main.views import ..., edit_product, delete_product
+    ...
+    path('edit-product/<uuid:id>', edit_product, name='edit_product'),
+    path('delete/<uuid:id>', delete_product, name='delete_product'),
+    ...
+    ```
+
+3. Membuat berkas HTML baru dengan nama `edit_product.html` pada direktori `main/templates` dengan kode berikut.
+    ```html
+    {% extends 'base.html' %}
+
+    {% load static %}
+
+    {% block content %}
+
+    <h1>Edit Product</h1>
+
+    <form method="POST">
+        {% csrf_token %}
+        <table>
+            {{ form.as_table }}
+            <tr>
+                <td></td>
+                <td>
+                    <input type="submit" value="Edit Product"/>
+                </td>
+            </tr>
+        </table>
+    </form>
+
+    {% endblock %}
+    ```
+
+4. Menambahkan button `edit` dan `delete` pada `main.html` pada direktori `main/templates` dengan kode berikut.
+    ```html
+    ...
+    <tr>
+        ...
+        <td>
+            <a href="{% url 'main:edit_product' product.pk %}">
+                <button>
+                    Edit
+                </button>
+            </a>
+        </td>
+        <td>
+            <a href="{% url 'main:delete_product' product.pk %}">
+                <button>
+                    Delete
+                </button>
+            </a>
+        </td>
+    </tr>
+    ...
+    ```
+
+5. Membuat file `navbar.html` pada direktori `templates` dan menambahkan navbar tersebut ke dalam berkas `main.html`, `create_product.html`, dan `edit_product.html`.
+    ```html
+    {% extends 'base.html' %}
+    {% block content %}`
+    {% include 'navbar.html' %}
+    ...
+    {% endblock content%}
+    ```
+
+6. Menambahkan _middleware_ WhiteNoise dan mengonfigurasi variabel `STATIC_ROOT`, `STATICFILES_DIRS`, dan `STATIC_URL` pada `settings.py` pada direktori `shield`.
+    ```py
+    ...
+    MIDDLEWARE = [
+        'django.middleware.security.SecurityMiddleware',
+        'whitenoise.middleware.WhiteNoiseMiddleware', 
+        ...
+    ]
+    ...
+    STATIC_URL = '/static/'
+    if DEBUG:
+        STATICFILES_DIRS = [
+            BASE_DIR / 'static' # merujuk ke /static root project pada mode development
+        ]
+    else:
+        STATIC_ROOT = BASE_DIR / 'static' # merujuk ke /static root project pada mode production
+    ...
+    ```
+
+7. Membuat berkas baru dengan nama `global.css` pada direktori `static/css` dengan kode berikut.
+    ```css
+    .form-style form input, form textarea, form select {
+        width: 100%;
+        padding: 0.5rem;
+        border: 2px solid #bcbcbc;
+        border-radius: 0.375rem;
+    }
+    .form-style form input:focus, form textarea:focus, form select:focus {
+        outline: none;
+        border-color: #674ea7;
+        box-shadow: 0 0 0 3px #674ea7;
+    }
+    @keyframes shine {
+        0% { background-position: -200% 0; }
+        100% { background-position: 200% 0; }
+    }
+    .animate-shine {
+        background: linear-gradient(120deg, rgba(255, 255, 255, 0.3), rgba(255, 255, 255, 0.1) 50%, rgba(255, 255, 255, 0.3));
+        background-size: 200% 100%;
+        animation: shine 3s infinite;
+    }
+    ```
+
+8. Menghubungkan Tailwind dan `global.css` ke `base.html` dengan mengubah berkas `base.html` pada direktori `templates`.
+    ```html
+    {% load static %}
+    <!DOCTYPE html>
+    <html lang="en">
+        <head>
+            <meta charset="UTF-8" />
+            <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+            {% block meta %} {% endblock meta %}
+            <script src="https://cdn.tailwindcss.com"></script>
+            <link rel="stylesheet" href="{% static 'css/global.css' %}"/>
+        </head>
+        <body>
+            {% block content %} {% endblock content %}
+        </body>
+    </html>
+    ```
+
+9. Menambahkan gambar sedih dengan nama `sedih-banget.png` pada direktori `static/image` untuk ditampilkan jika belum ada product.
+
+10. Styling halaman Login, Register, Home, Create Product, dan Edit Product.
+
+11. Melakukan `add`-`commit`-`push` ke GitHub.
