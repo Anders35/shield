@@ -752,3 +752,283 @@ _flex box_ digunakan untuk mengatur tata letak elemen dalam satu baris atau kolo
 10. Styling halaman Login, Register, Home, Create Product, dan Edit Product.
 
 11. Melakukan `add`-`commit`-`push` ke GitHub.
+
+## Tugas 6
+
+### Jelaskan manfaat dari penggunaan JavaScript dalam pengembangan aplikasi web!
+
+JavaScript sangat bermanfaat dalam pengembangan aplikasi web karena memungkinkan pengembangan aplikasi web yang interaktif dan dinamis dengan fitur-fitur yang ada. Dengan JavaScript, kita dapat membuat antarmuka pengguna yang responsif, melakukan validasi form secara langsung, dan mengubah konten tanpa me-_refresh_ halaman.
+
+### Jelaskan fungsi dari penggunaan `await` ketika kita menggunakan `fetch()`! Apa yang akan terjadi jika kita tidak menggunakan `await`?
+
+`await` digunakan untuk menunggu `Promise` yang dikembalikan oleh `fetch()` sehingga kode dapat ditulis secara sinkron dan lebih mudah dibaca. Jika kita tidak menggunakan `await`, `fetch()` akan mengembalikan `Promise` yang belum selesai.
+
+### Mengapa kita perlu menggunakan _decorator_ `csrf_exempt` pada _view_ yang akan digunakan untuk AJAX `POST`?
+
+_Decorator_ `csrf_exempt` digunakan untuk menonaktifkan proteksi CSRF pada _view_ yang diperlukan tidak memerlukan token CSRF. Ini diperlukan karena request AJAX `POST` biasanya tidak menyertakan token CSRF berbeda dengan form HTML biasa yang menyertakan token CSRF.
+
+### Pada tutorial PBP minggu ini, pembersihan data _input_ pengguna dilakukan di belakang (_backend_) juga. Mengapa hal tersebut tidak dilakukan di _frontend_ saja?
+
+Pembersihan data dilakukan di _backend_ untuk keamanan dan keandalan karena pengguna dapat memanipulasi data di _frontend_. Validasi di _backend_ memastikan bahwa data yang masuk ke aplikasi aman sehingga menjaga integritas aplikasi.
+
+### Implementasi Checklist
+
+1. Membuat fungsi baru `add_product_ajax` pada berkas `views.py` pada direktori `main` dengan kode berikut.
+    ```py
+    ...
+    from django.views.decorators.csrf import csrf_exempt
+    from django.views.decorators.http import require_POST
+    from django.utils.html import strip_tags
+    ...
+    @csrf_exempt
+    @require_POST
+    def add_product_ajax(request):
+        name = strip_tags(request.POST.get("name"))
+        price = request.POST.get("price")
+        description = strip_tags(request.POST.get("description"))
+        user = request.user
+
+        new_product = Product(
+            name=name, price=price, description=description,
+            user=user
+        )
+        new_product.save()
+
+        return HttpResponse(b"CREATED", status=201)
+    ```
+
+2. Menambahkan dua _method_ baru pada class `ProductForm` di `forms.py` pada direktori `main`.
+    ```py
+    ...
+    from django.utils.html import strip_tags
+    ...
+    class ProductForm(ModelForm):
+        class Meta:
+            ...
+        
+        def clean_name(self):
+            name = self.cleaned_data["name"]
+            return strip_tags(name)
+
+        def clean_description(self):
+            description = self.cleaned_data["description"]
+            return strip_tags(description)
+    ```
+
+3. Menambahkan _routing_ untuk fungsi tersebut pada `urls.py` pada direktori `main` dengan kode berikut.
+    ```py
+    ...
+    from main.views import ..., add_mood_entry_ajax
+    ...
+    urlpatterns = [
+        ...
+        path('create-ajax', add_product_ajax, name='add_product_ajax'),
+    ]
+    ```
+
+4. Menghapus kode pada fungsi `show_main` pada `views.py` pada direktori `main`.
+    ```py
+    products = Product.objects.filter(user=request.user)
+    ```
+    dan
+    ```py
+    'products': products,
+    ```
+
+5. Mengubah baris pertama fungsi `show_json` dan `show_xml` pada `views.py` pada direktori `main`.
+    ```py
+    data = Product.objects.filter(user=request.user)
+    ```
+
+6. Menghapus kode pada `main.html` pada direktori `main/templates`.
+    ```html
+    ...
+        {% if not products %}
+        <div class="flex flex-col items-center justify-center min-h-[24rem] p-6">
+            <img src="{% static 'image/sedih-banget.png' %}" alt="Sad face" class="w-32 h-32 mb-4"/>
+            <p class="text-xl text-center text-black-600 mt-4 font-bold">Belum ada Data Product</p>
+        </div>
+        {% else %}
+        <div class="columns-1 sm:columns-2 lg:columns-3 gap-6 space-y-6 w-full">
+            {% for product in products %}
+                {% include 'card_product.html' with product=product %}
+            {% endfor %}
+        </div>
+        {% endif %}
+    ...
+    ```
+
+7. Membuat modal sebagai form dan menambahkan div `product_cards` pada `main.html` pada direktori `main/templates`.
+    ```html
+    ...
+    {% block meta %}
+    ...
+    <script src="https://cdn.jsdelivr.net/npm/dompurify@3.1.7/dist/purify.min.js"></script>
+    ...
+    {% endblock meta %}
+    ...
+    <div id="product_cards"></div>
+    <div id="crudModal" tabindex="-1" aria-hidden="true" class="hidden fixed inset-0 z-50 w-full flex items-center justify-center bg-gray-800 bg-opacity-50 overflow-x-hidden overflow-y-auto transition-opacity duration-300 ease-out">
+      <div id="crudModalContent" class="relative bg-white rounded-lg shadow-lg w-5/6 sm:w-3/4 md:w-1/2 lg:w-1/3 mx-4 sm:mx-0 transform scale-95 opacity-0 transition-transform transition-opacity duration-300 ease-out">
+        <!-- Modal header -->
+        <div class="flex items-center justify-between p-4 border-b rounded-t">
+          <h3 class="text-xl font-semibold text-gray-900">
+            Add New Product Entry
+          </h3>
+          <button type="button" class="text-gray-400 bg-transparent hover:bg-gray-200 hover:text-gray-900 rounded-lg text-sm p-1.5 ml-auto inline-flex items-center" id="closeModalBtn">
+            <svg aria-hidden="true" class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+              <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd"></path>
+            </svg>
+            <span class="sr-only">Close modal</span>
+          </button>
+        </div>
+        <!-- Modal body -->
+        <div class="px-6 py-4 space-y-6 form-style">
+          <form id="productForm">
+            <div class="mb-4">
+              <label for="product" class="block text-sm font-medium text-gray-700">Name</label>
+              <input type="text" id="name" name="name" class="mt-1 block w-full border border-gray-300 rounded-md p-2 hover:border-blue-700" placeholder="Enter product name" required>
+            </div>
+            <div class="mb-4">
+              <label for="price" class="block text-sm font-medium text-gray-700">Price</label>
+              <input type="number" id="price" name="price" class="mt-1 block w-full border border-gray-300 rounded-md p-2 hover:border-blue-700" required>
+            </div>
+            <div class="mb-4">
+              <label for="description" class="block text-sm font-medium text-gray-700">Description</label>
+              <textarea id="description" name="description" rows="3" class="mt-1 block w-full h-52 resize-none border border-gray-300 rounded-md p-2 hover:border-blue-700" placeholder="Description" required></textarea>
+            </div>
+          </form>
+        </div>
+        <!-- Modal footer -->
+        <div class="flex flex-col space-y-2 md:flex-row md:space-y-0 md:space-x-2 p-6 border-t border-gray-200 rounded-b justify-center md:justify-end">
+          <button type="button" class="bg-gray-500 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded-lg" id="cancelButton">Cancel</button>
+          <button type="submit" id="submitProduct" form="productForm" class="bg-blue-700 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded-lg">Save</button>
+        </div>
+      </div>
+    </div>
+    ...
+    ```
+
+8. Menambahkan fungsi-fungsi JavaScript pada `main.html` pada direktori `main/templates`.
+    ```html
+    ...
+    <script>
+    async function getProducts(){
+        return fetch("{% url 'main:show_json' %}").then((res) => res.json())
+    }
+    async function refreshProducts() {
+        document.getElementById("product_cards").innerHTML = "";
+        document.getElementById("product_cards").className = "";
+        const products = await getProducts();
+        let htmlString = "";
+        let classNameString = "";
+
+        if (products.length === 0) {
+            classNameString = "flex flex-col items-center justify-center min-h-[24rem] p-6";
+            htmlString = `
+                <div class="flex flex-col items-center justify-center min-h-[24rem] p-6">
+                    <img src="{% static 'image/sedih-banget.png' %}" alt="Sad face" class="w-32 h-32 mb-4"/>
+                    <p class="text-xl text-center text-black-600 mt-4 font-bold">Belum ada Data Product</p>
+                </div>
+            `;
+        }
+        else {
+            classNameString = "columns-1 sm:columns-2 lg:columns-3 gap-6 space-y-6 w-full"
+            products.forEach((item) => {
+                const name = DOMPurify.sanitize(item.fields.name);
+                const description = DOMPurify.sanitize(item.fields.description);
+                htmlString += `
+                <div class="relative break-inside-avoid">
+                    <div class="bg-blue-100 shadow-lg rounded-lg mb-6 overflow-hidden border-2 border-blue-300 transform hover:scale-105 transition-transform duration-300">
+                        <div class="bg-blue-200 text-gray-800 p-4 border-b-2 border-blue-300 pr-20">
+                            <h3 class="font-bold text-2xl mb-1 break-words pr-8">${name}</h3>
+                            <span class="text-2xl font-bold text-blue-600">Rp. ${item.fields.price}</span>
+                        </div>
+                        <div class="p-4">
+                            <p class="font-semibold text-lg mb-2">About this item</p>
+                            <p class="text-gray-700 mb-4 break-words">
+                            ${description}
+                            </p>
+                        </div>
+                    </div>
+                    <div class="absolute top-2 right-2 flex space-x-2">
+                    <a href="/edit-product/${item.pk}" class="bg-amber-400 hover:bg-amber-500 text-white rounded-full p-1.5 transition duration-300 shadow-md">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                    </svg>
+                    </a>
+                    <a href="/delete/${item.pk}" class="bg-red-500 hover:bg-red-600 text-white rounded-full p-1.5 transition duration-300 shadow-md">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                    </svg>
+                    </a>
+                </div>
+                </div>
+                `;
+            });
+        }
+        document.getElementById("product_cards").className = classNameString;
+        document.getElementById("product_cards").innerHTML = htmlString;
+    }
+    refreshProducts();
+    const modal = document.getElementById('crudModal');
+    const modalContent = document.getElementById('crudModalContent');
+
+    function showModal() {
+        const modal = document.getElementById('crudModal');
+        const modalContent = document.getElementById('crudModalContent');
+
+        modal.classList.remove('hidden'); 
+        setTimeout(() => {
+            modalContent.classList.remove('opacity-0', 'scale-95');
+            modalContent.classList.add('opacity-100', 'scale-100');
+        }, 50); 
+    }
+
+    function hideModal() {
+        const modal = document.getElementById('crudModal');
+        const modalContent = document.getElementById('crudModalContent');
+
+        modalContent.classList.remove('opacity-100', 'scale-100');
+        modalContent.classList.add('opacity-0', 'scale-95');
+
+        setTimeout(() => {
+            modal.classList.add('hidden');
+        }, 150); 
+    }
+
+    document.getElementById("cancelButton").addEventListener("click", hideModal);
+    document.getElementById("closeModalBtn").addEventListener("click", hideModal);
+    function addProduct() {
+        fetch("{% url 'main:add_product_ajax' %}", {
+        method: "POST",
+        body: new FormData(document.querySelector('#productForm')),
+        })
+        .then(response => refreshProducts())
+
+        document.getElementById("productForm").reset(); 
+        document.querySelector("[data-modal-toggle='crudModal']").click();
+
+        return false;
+    </script>
+    {% endblock content %}
+    ```
+
+9. Mengubah tombol `Add New Product` dan menambahkan tombol `Add New Product by AJAX` pada `main.html` pada direktori `main/templates`.
+    ```html
+    ...
+    <div class="flex justify-end mb-6">
+        <a href="{% url 'main:create_product' %}" class="bg-blue-400 hover:bg-blue-400 text-white font-bold py-2 px-4 rounded-lg transition duration-300 ease-in-out transform hover:-translate-y-1 hover:scale-105 mx-4 ">
+          Add New Product
+        </a>
+        <button data-modal-target="crudModal" data-modal-toggle="crudModal" class="btn bg-blue-70
+    }
+    document.getElementById("productForm").addEventListener("submit", (e) => {
+        e.preventDefault();
+        addProduct();
+    })0 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded-lg transition duration-300 ease-in-out transform hover:-translate-y-1 hover:scale-105" onclick="showModal();">
+          Add New Product by AJAX
+        </button>
+    </div>
+    ...
+    ```
